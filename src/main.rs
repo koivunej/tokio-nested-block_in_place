@@ -1,17 +1,13 @@
 fn main() {
     for attempt in 1.. {
-        let first = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        let second = tokio::runtime::Builder::new_multi_thread()
+        let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
 
         let (tx, mut rx) = tokio::sync::watch::channel(0usize);
 
-        let _jh = first.spawn(async move {
+        let _jh = rt.spawn(async move {
             loop {
                 tokio::time::sleep(std::time::Duration::from_millis(1)).await;
 
@@ -19,7 +15,7 @@ fn main() {
             }
         });
 
-        let jh = second.spawn(async move {
+        let jh = rt.spawn(async move {
             tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
                     // this is required
@@ -46,10 +42,9 @@ fn main() {
             });
         });
 
-        let res = second.block_on(jh);
+        let res = rt.block_on(jh);
 
-        first.shutdown_timeout(std::time::Duration::from_secs(1));
-        second.shutdown_timeout(std::time::Duration::from_secs(1));
+        rt.shutdown_timeout(std::time::Duration::from_secs(1));
 
         let e = match res {
             Ok(()) => continue,
