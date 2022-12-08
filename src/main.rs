@@ -1,21 +1,3 @@
-/*
-use once_cell::sync::Lazy;
-
-static FIRST: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-});
-
-static SECOND: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-});
-*/
-
 fn main() {
     for attempt in 1.. {
         let first = tokio::runtime::Builder::new_multi_thread()
@@ -39,16 +21,9 @@ fn main() {
 
         let jh = second.spawn(async move {
             tokio::task::block_in_place(|| {
-                // println!("block_in_place");
                 tokio::runtime::Handle::current().block_on(async {
-                    // println!("{:indent$}-> block_on", "", indent = 2);
-
                     // this is required
-                    tokio::task::block_in_place(|| {
-                        // println!("{:indent$}-> block_in_place", "", indent = 4);
-                    });
-
-                    // println!("{:indent$}block_on continues", "", indent = 2);
+                    tokio::task::block_in_place(|| {});
 
                     {
                         let i = *rx.borrow();
@@ -64,20 +39,10 @@ fn main() {
 
                     // not required, but was in the original code, seems to make this more
                     // reproducable
-                    tokio::task::block_in_place(|| {
-                        // dostuff
-                        // println!("{:indent$}-> block_in_place", "", indent = 4);
-                    });
-
-                    // println!("{:indent$}block_on continues", "", indent = 2);
+                    tokio::task::block_in_place(|| {});
                 });
 
                 std::thread::sleep(std::time::Duration::from_micros(999));
-                // println!(
-                //     "{:indent$}after std::thread::sleep, before panic",
-                //     "",
-                //     indent = 2
-                // );
             });
         });
 
